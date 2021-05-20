@@ -96,10 +96,10 @@ namespace RedicalGamez.Dev.ToolKit
             else
             {
                 // Format text.
-                formatedMessage = formatedMessage.Substring(0, maxLogDisplayCharacterCount - 5);
+                formatedMessage = formatedMessage.Substring(0, maxLogDisplayCharacterCount - 2);
 
                 // Add surfix.
-                formatedMessage += ".....";
+                formatedMessage += "...";
             }
 
             // Switch log types.
@@ -108,11 +108,14 @@ namespace RedicalGamez.Dev.ToolKit
                 // Switching log types.
                 case DebugData.LogType.LogInfo: // Logging infos.
 
+                    // Raw info format.
+                    string rawInfoFormat = string.Format($"<color=white>--->>></color> <color=blue>Info Message Results : </color><color=white>{logMessage}.</color><color=grey> From class : </color><color=white>{logClassName}</color>.");
+
                     // Log info format.
-                    string logInfoFormat = string.Format($"<color=white>--->>></color><color=blue>Log Info! : </color><color=white>{formatedMessage}.</color><color=grey> From class : </color><color=white>{logClassName}</color>.");
+                    string logInfoFormat = string.Format($"<color=white>--->>></color> <color=blue>Log Info! : </color><color=white>{formatedMessage}.</color><color=grey> From class : </color><color=white>{logClassName}</color>.");
 
                     // Log to console window.
-                    base.LogConsoleWindow(logInfoFormat, DebugData.LogType.LogInfo);
+                    base.LogConsoleWindow(rawInfoFormat, logInfoFormat, DebugData.LogType.LogInfo);
 
                     // Check if log to Unity console.
                     if(logToUnityConsole)
@@ -125,11 +128,14 @@ namespace RedicalGamez.Dev.ToolKit
 
                 case DebugData.LogType.LogWarning: // Logging warnings.
 
+                    // Raw info format.
+                    string rawWarningFormat = string.Format($"<color=white>--->>></color> <color=orange>Warning Message Results : </color><color=white>{logMessage}.</color><color=grey> From class : </color><color=white>{logClassName}</color>.");
+
                     // Log warning format.
-                    string logWarningFormat = string.Format($"<color=white>--->>></color><color=orange>Log Warning! </color>: <color=white>{formatedMessage}.</color><color=grey> From class : </color><color=white>{logClassName}</color>.");
+                    string logWarningFormat = string.Format($"<color=white>--->>></color> <color=orange>Log Warning! </color>: <color=white>{formatedMessage}.</color><color=grey> From class : </color><color=white>{logClassName}</color>.");
 
                     // Log to console window.
-                    base.LogConsoleWindow(logWarningFormat, DebugData.LogType.LogWarning);
+                    base.LogConsoleWindow(rawWarningFormat, logWarningFormat, DebugData.LogType.LogWarning);
 
                     // Check if log to Unity console.
                     if (logToUnityConsole)
@@ -142,11 +148,14 @@ namespace RedicalGamez.Dev.ToolKit
 
                 case DebugData.LogType.LogError: // Logging errors.
 
+                    // Raw info format.
+                    string rawErrorFormat = string.Format($"<color=white>--->>></color> <color=red>Error Message Results : </color><color=white>{logMessage}.</color><color=grey> From class : </color><color=white>{logClassName}</color>.");
+
                     // Log error format.
-                    string logErrorFormat = string.Format($"<color=white>--->>></color><color=red>Log Error!</color> : <color=white>{formatedMessage}.</color><color=grey> From class : </color><color=white>{logClassName}</color>.");
+                    string logErrorFormat = string.Format($"<color=white>--->>></color> <color=red>Log Error!</color> : <color=white>{formatedMessage}.</color><color=grey> From class : </color><color=white>{logClassName}</color>.");
 
                     // Log to console window.
-                    base.LogConsoleWindow(logErrorFormat, DebugData.LogType.LogError);
+                    base.LogConsoleWindow(rawErrorFormat, logErrorFormat, DebugData.LogType.LogError);
 
                     // Check if log to Unity console.
                     if (logToUnityConsole)

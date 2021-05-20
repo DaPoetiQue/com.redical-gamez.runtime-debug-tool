@@ -45,17 +45,35 @@ namespace RedicalGamez.Dev.ToolKit
         private bool windowOpen = false;
 
         // Logs count display text.
-        private Text logInfoCountDisplayer = null, logWarningCountDisplayer = null, logErrorCountDisplayer = null, logAllountDisplayer = null;
+        private Text logInfoCountDisplayer = null, logWarningCountDisplayer = null, logErrorCountDisplayer = null, logAllCountDisplayer = null;
+
+        // Descriptive log message displayer.
+        private Text descriptiveLogWindowMessageDisplayer = null;
 
         // Log count.
         private int logInfoCount = 0, logWarningCount = 0, logErrorCount = 0, logAllCount = 0;
 
+        // Header text font size.
+        private int headerTitleFontSize = 20, logMessageDisplayerFontSize = 20, descriptiveLogDisplayerFontSize = 20;
+
+        private int descriptiveLogDisplayerLeftPaddingAmount = 25, descriptiveLogDisplayerRightPaddingAmount = 25;
+
+
         // Log panel padding amount.
         private float logPanelPaddingAmount = 25.0f;
+
+        // Log panel height.
+        private float logPanelMinHeight = 50.0f, logPanelPreferedHeight = 85.0f, descriptiveLogInfoWindowMinHeight = 100.0f, descriptiveLogInfoWindowPreferedHeight = 150.0f;
+
+        // Default descriptive log window info.
+        private string defaultDesLogWinDisplayerInfo = "Log.";
 
         // Active log panel list.
         [SerializeField]
         private List<DebugData.LogPanel> activeLogPanelList = new List<DebugData.LogPanel>();
+
+        // Active log message displayer dictionary.
+        private Dictionary<string, Text> logMessageDictionary = new Dictionary<string, Text>();
 
         // Log panel delete list.
         protected List<GameObject> logPanelDeleteList = new List<GameObject>();
@@ -95,7 +113,7 @@ namespace RedicalGamez.Dev.ToolKit
         }
 
         // Log.
-        protected void LogConsoleWindow(string logMessage, DebugData.LogType logType)
+        protected void LogConsoleWindow(string rawLogMessage, string logMessage, DebugData.LogType logType)
         {
             // Check if message doesn't exist in the delete list.
             if(logMessageDeleteList.Contains(logMessage) == false)
@@ -130,7 +148,7 @@ namespace RedicalGamez.Dev.ToolKit
                 logAllCount++;
 
                 // Create console log.
-                CreateConsoleLog("Logger", logMessage, Color.black, 50.0f, 75.0f, mainConsoleWindow, logType);
+                CreateConsoleLog("Logger", rawLogMessage, logMessage, Color.black, this.logPanelMinHeight, this.logPanelPreferedHeight, mainConsoleWindow, logType);
 
                 // Update window content.
                 UpdateWindowContent();
@@ -143,8 +161,6 @@ namespace RedicalGamez.Dev.ToolKit
                 // Return.
                 return;
             }
-
-           
         }
 
         // Update window content.
@@ -154,7 +170,7 @@ namespace RedicalGamez.Dev.ToolKit
             SetTitle($"Info ({logInfoCount})", logInfoCountDisplayer);
             SetTitle($"Warning ({logWarningCount})", logWarningCountDisplayer);
             SetTitle($"Error ({logErrorCount})", logErrorCountDisplayer);
-            SetTitle($"All ({logAllCount})", logAllountDisplayer);
+            SetTitle($"All ({logAllCount})", logAllCountDisplayer);
         }
 
         // Set Title
@@ -167,8 +183,24 @@ namespace RedicalGamez.Dev.ToolKit
         // Create window.
         private RectTransform CreateWindow(Vector2 screenResolution, GameObject debugWindowCanvas, RectTransform windowParent)
         {
+            // Current resolution.
+            Vector2 currentResolution = Vector2.zero;
+
+            // Check if landscape.
+            if(screenResolution.x > screenResolution.y)
+            {
+                // Setup landscape resolution.
+                currentResolution = screenResolution;
+            }
+            else
+            {
+                // Setup portrait resolution.
+                currentResolution.x = screenResolution.y;
+                currentResolution.y = screenResolution.x;
+            }
+
             // Create canvas.
-            CreateCanvas(debugWindow: debugWindowCanvas, referenceResolution: screenResolution);
+            CreateCanvas(debugWindow: debugWindowCanvas, referenceResolution: currentResolution);
 
             // Create a new window object.
             GameObject debugWindow = new GameObject("Runtime Debug Window");
@@ -180,7 +212,7 @@ namespace RedicalGamez.Dev.ToolKit
             window.anchoredPosition = Vector2.zero;
 
             // Set window resolution.
-            window.sizeDelta = screenResolution / 2;
+            window.sizeDelta = currentResolution / 2;
 
             // Assign image component.
             Image windowBackground = debugWindow.AddComponent<Image>();
@@ -233,7 +265,7 @@ namespace RedicalGamez.Dev.ToolKit
             layout.spacing = 5.0f;
 
             // Create console header window panel.
-            RectTransform consoleHeaderWindowPanel = CreateWindowPanel("Console Window Header", this.consoleHeaderWindow, 75.0f, 75.0f, window);
+            RectTransform consoleHeaderWindowPanel = CreateWindowPanel("Console Window Header", this.consoleHeaderWindow, 50.0f, 50.0f, window);
 
             // Add horizontal layout group to header panel.
             consoleHeaderWindowPanel.gameObject.AddComponent<HorizontalLayoutGroup>().spacing = 5.0f;
@@ -246,6 +278,9 @@ namespace RedicalGamez.Dev.ToolKit
 
             // Create console window panel.
             mainConsoleWindow = CreateWindowPanel("Console Window", this.consoleWindow, window.sizeDelta.y / 2.0f, window.sizeDelta.y, window);
+
+            // Add mask.
+            mainConsoleWindow.gameObject.AddComponent<Mask>();
 
             // Assign vertical layout group
             VerticalLayoutGroup consloleWindowLayout = mainConsoleWindow.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -260,10 +295,89 @@ namespace RedicalGamez.Dev.ToolKit
             consloleWindowLayout.spacing = 5.0f;
 
             // Create console log window panel.
-            RectTransform consoleLogWindowPanel = CreateWindowPanel("Log Window", this.consoleLogWindow, 100.0f, 150.0f, window);
+            RectTransform consoleDescriptiveLogWindowPanel = CreateWindowPanel("Log Window", this.consoleLogWindow,descriptiveLogInfoWindowMinHeight, descriptiveLogInfoWindowPreferedHeight, window);
+
+            HorizontalLayoutGroup consoleDescriptiveLogWindowPanelLayout = consoleDescriptiveLogWindowPanel.gameObject.AddComponent<HorizontalLayoutGroup>();
+
+            // Assign panel padding.
+            consoleDescriptiveLogWindowPanelLayout.padding.left = descriptiveLogDisplayerLeftPaddingAmount;
+            consoleDescriptiveLogWindowPanelLayout.padding.right = descriptiveLogDisplayerRightPaddingAmount;
+
+            // Add text component.
+            AddTextComponentToWindowPanel("Descriptive Log Displayer", descriptiveLogInfoWindowPreferedHeight, consoleDescriptiveLogWindowPanel);
 
             // Create window header buttons.
             Button closeConsoleButton = CreateWindowButton("Close Button", "X", Color.red, 25.0f, 50.0f, consoleHeaderWindowPanel, DebugData.WindowButtonType.Close);
+        }
+
+        // Add text component.
+        private void AddTextComponentToWindowPanel(string logDisplayerName, float panelPreferedHeight, RectTransform parentWindow)
+        {
+            // Create a new text object.
+            GameObject logWindowMessageDisplayer = new GameObject(logDisplayerName);
+
+            // Add rect transform.
+            RectTransform logWindowMessageDisplayerRect = logWindowMessageDisplayer.AddComponent<RectTransform>();
+
+            // Text rect anchors.
+            Vector2 anchorMin = Vector2.zero;
+            anchorMin.y = 0.5f;
+            Vector2 anchorMax = Vector2.zero;
+            anchorMax.y = 0.5f;
+
+            // Setup panel rect anchors.
+            logWindowMessageDisplayerRect.anchorMin = anchorMin;
+            logWindowMessageDisplayerRect.anchorMax = anchorMax;
+
+            // Set pivot.
+            logWindowMessageDisplayerRect.pivot = anchorMin;
+
+            // logDisplayTextRect position.
+            Vector2 logDisplayTextPosition = Vector2.zero;
+
+            // Add text displayer margin.
+            logDisplayTextPosition.x = logPanelPaddingAmount;
+
+            // Set button position.
+            logWindowMessageDisplayerRect.anchoredPosition = logDisplayTextPosition;
+
+            // Add Text component to button text.
+            Text logTextDisplayer = logWindowMessageDisplayer.AddComponent<Text>();
+
+            // Set line spacing.
+            logTextDisplayer.lineSpacing = 1.5f;
+
+            // Add text font
+            logTextDisplayer.font = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
+
+            // Align text.
+            logTextDisplayer.alignment = TextAnchor.MiddleLeft;
+
+            // Set text font size.
+            logTextDisplayer.fontSize = descriptiveLogDisplayerFontSize;
+
+            // Set text overflow.
+            logTextDisplayer.horizontalOverflow = HorizontalWrapMode.Wrap;
+            logTextDisplayer.verticalOverflow = VerticalWrapMode.Overflow;
+
+            // Assign log message.
+            logTextDisplayer.text = defaultDesLogWinDisplayerInfo;
+
+            // Displayer size
+            Vector2 messageDisplayerSize = Vector2.zero;
+
+            // Assign size values.
+            messageDisplayerSize.x = Screen.width / 2.0f;
+            messageDisplayerSize.y = panelPreferedHeight;
+
+            // Assign displayer size.
+            logWindowMessageDisplayerRect.sizeDelta = messageDisplayerSize;
+
+            // Parent text.
+            logWindowMessageDisplayer.transform.SetParent(parentWindow, false);
+
+            // Get descriptive log text.
+            descriptiveLogWindowMessageDisplayer = logTextDisplayer;
         }
 
         // Create panel.
@@ -331,7 +445,7 @@ namespace RedicalGamez.Dev.ToolKit
                     closeButtonTitleDisplayer.alignment = TextAnchor.MiddleCenter;
 
                     // Set text font size.
-                    closeButtonTitleDisplayer.fontSize = 25;
+                    closeButtonTitleDisplayer.fontSize = headerTitleFontSize;
 
                     // Set text overflow.
                     closeButtonTitleDisplayer.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -357,7 +471,7 @@ namespace RedicalGamez.Dev.ToolKit
                     logInfoCountDisplayer.alignment = TextAnchor.MiddleCenter;
 
                     // Set text font size.
-                    logInfoCountDisplayer.fontSize = 25;
+                    logInfoCountDisplayer.fontSize = headerTitleFontSize;
 
                     // Set text overflow.
                     logInfoCountDisplayer.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -367,7 +481,16 @@ namespace RedicalGamez.Dev.ToolKit
                     logInfoCountDisplayer.text = buttonTitle;
 
                     // Assign button function.
-                    button.onClick.AddListener(() => this.ShowSelectedLogs(DebugData.LogType.LogInfo));
+                    button.onClick.AddListener(() => this.ShowSelectedLogType(DebugData.LogType.LogInfo));
+
+                    // Set selection color.
+                    ColorBlock infoColorBlock = button.colors;
+                    infoColorBlock.selectedColor = consoleWindow;
+                    infoColorBlock.highlightedColor = consoleWindow;
+                    infoColorBlock.pressedColor = consoleWindow;
+
+                    // Set pressed state.
+                    button.colors = infoColorBlock;
 
                     break;
 
@@ -383,7 +506,7 @@ namespace RedicalGamez.Dev.ToolKit
                     logWarningCountDisplayer.alignment = TextAnchor.MiddleCenter;
 
                     // Set text font size.
-                    logWarningCountDisplayer.fontSize = 25;
+                    logWarningCountDisplayer.fontSize = headerTitleFontSize;
 
                     // Set text overflow.
                     logWarningCountDisplayer.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -393,7 +516,16 @@ namespace RedicalGamez.Dev.ToolKit
                     logWarningCountDisplayer.text = buttonTitle;
 
                     // Assign button function.
-                    button.onClick.AddListener(() => this.ShowSelectedLogs(DebugData.LogType.LogWarning));
+                    button.onClick.AddListener(() => this.ShowSelectedLogType(DebugData.LogType.LogWarning));
+
+                    // Set selection color.
+                    ColorBlock warningColorBlock = button.colors;
+                    warningColorBlock.selectedColor = consoleWindow;
+                    warningColorBlock.highlightedColor = consoleWindow;
+                    warningColorBlock.pressedColor = consoleWindow;
+
+                    // Set pressed state.
+                    button.colors = warningColorBlock;
 
                     break;
 
@@ -409,7 +541,7 @@ namespace RedicalGamez.Dev.ToolKit
                     logErrorCountDisplayer.alignment = TextAnchor.MiddleCenter;
 
                     // Set text font size.
-                    logErrorCountDisplayer.fontSize = 25;
+                    logErrorCountDisplayer.fontSize = headerTitleFontSize;
 
                     // Set text overflow.
                     logErrorCountDisplayer.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -419,33 +551,51 @@ namespace RedicalGamez.Dev.ToolKit
                     logErrorCountDisplayer.text = buttonTitle;
 
                     // Assign button function.
-                    button.onClick.AddListener(() => this.ShowSelectedLogs(DebugData.LogType.LogError));
+                    button.onClick.AddListener(() => this.ShowSelectedLogType(DebugData.LogType.LogError));
+
+                    // Set selection color.
+                    ColorBlock errorColorBlock = button.colors;
+                    errorColorBlock.selectedColor = consoleWindow;
+                    errorColorBlock.highlightedColor = consoleWindow;
+                    errorColorBlock.pressedColor = consoleWindow;
+
+                    // Set pressed state.
+                    button.colors = errorColorBlock;
 
                     break;
 
                 case DebugData.WindowButtonType.LogAll: // Log all.
 
                     // Add Text component to button text.
-                    logAllountDisplayer = buttonText.AddComponent<Text>();
+                    logAllCountDisplayer = buttonText.AddComponent<Text>();
 
                     // Add text font
-                    logAllountDisplayer.font = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
+                    logAllCountDisplayer.font = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
 
                     // Align text.
-                    logAllountDisplayer.alignment = TextAnchor.MiddleCenter;
+                    logAllCountDisplayer.alignment = TextAnchor.MiddleCenter;
 
                     // Set text font size.
-                    logAllountDisplayer.fontSize = 25;
+                    logAllCountDisplayer.fontSize = headerTitleFontSize;
 
                     // Set text overflow.
-                    logAllountDisplayer.horizontalOverflow = HorizontalWrapMode.Overflow;
-                    logAllountDisplayer.verticalOverflow = VerticalWrapMode.Overflow;
+                    logAllCountDisplayer.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    logAllCountDisplayer.verticalOverflow = VerticalWrapMode.Overflow;
 
                     // Add title text.
-                    logAllountDisplayer.text = buttonTitle;
+                    logAllCountDisplayer.text = buttonTitle;
 
                     // Assign button function.
-                    button.onClick.AddListener(() => this.ShowSelectedLogs(DebugData.LogType.LogAll));
+                    button.onClick.AddListener(() => this.ShowSelectedLogType(DebugData.LogType.LogAll));
+
+                    // Set selection color.
+                    ColorBlock allColorBlock = button.colors;
+                    allColorBlock.selectedColor = consoleWindow;
+                    allColorBlock.highlightedColor = consoleWindow;
+                    allColorBlock.pressedColor = consoleWindow;
+
+                    // Set pressed state.
+                    button.colors = allColorBlock;
 
                     break;
 
@@ -461,7 +611,7 @@ namespace RedicalGamez.Dev.ToolKit
                     clearButtonTitleDisplayer.alignment = TextAnchor.MiddleCenter;
 
                     // Set text font size.
-                    clearButtonTitleDisplayer.fontSize = 25;
+                    clearButtonTitleDisplayer.fontSize = headerTitleFontSize;
 
                     // Set text overflow.
                     clearButtonTitleDisplayer.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -494,13 +644,23 @@ namespace RedicalGamez.Dev.ToolKit
         }
 
         // Create console log.
-        private void CreateConsoleLog(string logName, string logMessage, Color panelColor, float minLogPanelHeight, float preferedLogPanelHeight, RectTransform parentWindow, DebugData.LogType logType)
+        private void CreateConsoleLog(string logName, string rawLogMessage, string logMessage, Color panelColor, float minLogPanelHeight, float preferedLogPanelHeight, RectTransform parentWindow, DebugData.LogType logType)
         {
             // Create a new log panel
             GameObject logPanel = new GameObject(logName + " : " + logAllCount.ToString());
 
             // Assign rect transform.
             RectTransform logPanelRect = logPanel.AddComponent<RectTransform>();
+
+            // Log panel size.
+            Vector2 logPanelSize = Vector2.zero;
+
+            // Assign panel size.
+            logPanelSize.x = logPanelRect.sizeDelta.x;
+            logPanelSize.y = preferedLogPanelHeight;
+
+            // Assign panel size.
+            logPanelRect.sizeDelta = logPanelSize;
 
             // Add layout element.
             LayoutElement layoutElement = logPanel.AddComponent<LayoutElement>();
@@ -510,7 +670,10 @@ namespace RedicalGamez.Dev.ToolKit
             layoutElement.preferredHeight = preferedLogPanelHeight;
 
             // Add button component.
-            logPanel.AddComponent<Button>();
+            Button logButton = logPanel.AddComponent<Button>();
+
+            // Assign button function.
+            logButton.onClick.AddListener(() => this.ShowSelectedLog(rawLogMessage));
 
             // Add image component with color.
             logPanel.AddComponent<Image>().color = panelColor;
@@ -553,7 +716,7 @@ namespace RedicalGamez.Dev.ToolKit
             logTextDisplayer.alignment = TextAnchor.MiddleLeft;
 
             // Set text font size.
-            logTextDisplayer.fontSize = 20;
+            logTextDisplayer.fontSize = logMessageDisplayerFontSize;
 
             // Set text overflow.
             logTextDisplayer.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -576,6 +739,9 @@ namespace RedicalGamez.Dev.ToolKit
 
             // Add panel to list.
             logPanelDeleteList.Add(logPanel);
+
+            // Get active log message displayer list.
+            // logMessageDictionary.Add(logMessage, logTextDisplayer);
         }
 
         // Create event.
@@ -595,8 +761,18 @@ namespace RedicalGamez.Dev.ToolKit
             }
         }
 
-        // Show selected logs.
-        private void ShowSelectedLogs(DebugData.LogType logType)
+        // Show selected log.
+        private void ShowSelectedLog(string logMessage)
+        {
+            // Check if descriptive log window message displayer is not assigned and return.
+            if (descriptiveLogWindowMessageDisplayer == null) return;
+
+            // Log message.
+            descriptiveLogWindowMessageDisplayer.text = logMessage;
+        }
+
+        // Show selected log type.
+        private void ShowSelectedLogType(DebugData.LogType logType)
         {
             // Check if there are no logs and return.
             if (logAllCount <= 0) return;
@@ -730,15 +906,14 @@ namespace RedicalGamez.Dev.ToolKit
             // Check if there are no logs to clear and return.
             if (logAllCount <= 0) return;
 
-            // Log
-            Debug.Log($"--->>><color=white>Clear : {logAllCount} logs</color>");
-
             // Loop through all logs.
             for (int i = 0; i < logAllCount; i++)
             {
                 // Delete log.
                 Destroy(logPanelDeleteList[i]);
             }
+
+            descriptiveLogWindowMessageDisplayer.text = defaultDesLogWinDisplayerInfo;
 
             // Clear content lists.
             logPanelDeleteList = new List<GameObject>();
